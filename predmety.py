@@ -2,26 +2,55 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from database import get_connection
 
+
 class PredmetyFrame(ttk.Frame):
     def __init__(self, parent):
-        super().__init__(parent)
+        super().__init__(parent, padding=10)
 
-        tk.Label(self, text="Název").pack()
-        self.entry_nazev = tk.Entry(self)
-        self.entry_nazev.pack()
+        #FORMULÁŘ
+        form_frame = ttk.LabelFrame(self, text="Přidat předmět", padding=10)
+        form_frame.pack(fill="x", padx=5, pady=5)
 
-        tk.Label(self, text="Zkratka").pack()
-        self.entry_zkratka = tk.Entry(self)
-        self.entry_zkratka.pack()
+        ttk.Label(form_frame, text="Název:").grid(row=0, column=0, sticky="w", pady=2)
+        self.entry_nazev = ttk.Entry(form_frame)
+        self.entry_nazev.grid(row=0, column=1, pady=2, sticky="ew")
 
-        tk.Button(self, text="Přidat", command=self.add_predmet).pack()
+        ttk.Label(form_frame, text="Zkratka:").grid(row=1, column=0, sticky="w", pady=2)
+        self.entry_zkratka = ttk.Entry(form_frame)
+        self.entry_zkratka.grid(row=1, column=1, pady=2, sticky="ew")
 
-        self.tree = ttk.Treeview(self, columns=("ID", "Název", "Zkratka"), show="headings")
-        for col in ("ID", "Název", "Zkratka"):
-            self.tree.heading(col, text=col)
-        self.tree.pack(fill="both", expand=True)
+        form_frame.columnconfigure(1, weight=1)
 
-        tk.Button(self, text="Smazat", command=self.delete_predmet).pack()
+        ttk.Button(form_frame, text="Přidat", command=self.add_predmet)\
+            .grid(row=2, column=0, columnspan=2, pady=5)
+
+        #TREEVIEW
+        table_frame = ttk.LabelFrame(self, text="Seznam předmětů", padding=5)
+        table_frame.pack(fill="both", expand=True, padx=5, pady=5)
+
+        self.tree = ttk.Treeview(
+            table_frame,
+            columns=("ID", "Název", "Zkratka"),
+            show="headings"
+        )
+
+        self.tree.heading("ID", text="ID")
+        self.tree.heading("Název", text="Název")
+        self.tree.heading("Zkratka", text="Zkratka")
+
+        self.tree.column("ID", width=50, anchor="center")
+        self.tree.column("Název", anchor="w")
+        self.tree.column("Zkratka", width=100, anchor="center")
+
+        self.tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        self.tree.configure(yscrollcommand=scrollbar.set)
+
+        #TLAČÍTKO SMAZAT
+        ttk.Button(self, text="Smazat vybraný předmět", command=self.delete_predmet)\
+            .pack(pady=5)
 
         self.refresh()
 
@@ -48,7 +77,10 @@ class PredmetyFrame(ttk.Frame):
 
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO predmety (nazev, zkratka) VALUES (?, ?)", (nazev, zkratka))
+        cursor.execute(
+            "INSERT INTO predmety (nazev, zkratka) VALUES (?, ?)",
+            (nazev, zkratka)
+        )
         conn.commit()
         conn.close()
 
@@ -59,15 +91,18 @@ class PredmetyFrame(ttk.Frame):
     def delete_predmet(self):
         selected = self.tree.selection()
         if not selected:
+            messagebox.showwarning("Upozornění", "Vyber předmět ke smazání")
             return
 
         item = self.tree.item(selected[0])
-        id = item["values"][0]
+        predmet_id = item["values"][0]
 
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM predmety WHERE id=?", (id,))
+        cursor.execute("DELETE FROM predmety WHERE id=?", (predmet_id,))
         conn.commit()
         conn.close()
 
         self.refresh()
+
+
