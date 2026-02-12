@@ -2,26 +2,54 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from database import get_connection
 
+
 class UciteleFrame(ttk.Frame):
     def __init__(self, parent):
-        super().__init__(parent)
+        super().__init__(parent, padding=10)
 
-        tk.Label(self, text="Jméno").pack()
-        self.entry_jmeno = tk.Entry(self)
-        self.entry_jmeno.pack()
+        #FORMULÁŘ 
+        form_frame = ttk.LabelFrame(self, text="Přidat učitele", padding=10)
+        form_frame.pack(fill="x", padx=5, pady=5)
 
-        tk.Label(self, text="Kabinet").pack()
-        self.entry_kabinet = tk.Entry(self)
-        self.entry_kabinet.pack()
+        ttk.Label(form_frame, text="Jméno:").grid(row=0, column=0, sticky="w", pady=2)
+        self.entry_jmeno = ttk.Entry(form_frame)
+        self.entry_jmeno.grid(row=0, column=1, sticky="ew", pady=2)
 
-        tk.Button(self, text="Přidat", command=self.add_ucitel).pack()
+        ttk.Label(form_frame, text="Kabinet:").grid(row=1, column=0, sticky="w", pady=2)
+        self.entry_kabinet = ttk.Entry(form_frame)
+        self.entry_kabinet.grid(row=1, column=1, sticky="ew", pady=2)
 
-        self.tree = ttk.Treeview(self, columns=("ID", "Jméno", "Kabinet"), show="headings")
+        form_frame.columnconfigure(1, weight=1)
+
+        ttk.Button(form_frame, text="Přidat", command=self.add_ucitel)\
+            .grid(row=2, column=0, columnspan=2, pady=5)
+
+        #TREEVIEW
+        table_frame = ttk.LabelFrame(self, text="Seznam učitelů", padding=5)
+        table_frame.pack(fill="both", expand=True, padx=5, pady=5)
+
+        self.tree = ttk.Treeview(
+            table_frame,
+            columns=("ID", "Jméno", "Kabinet"),
+            show="headings"
+        )
+
         for col in ("ID", "Jméno", "Kabinet"):
             self.tree.heading(col, text=col)
-        self.tree.pack(fill="both", expand=True)
 
-        tk.Button(self, text="Smazat", command=self.delete_ucitel).pack()
+        self.tree.column("ID", width=50, anchor="center")
+        self.tree.column("Jméno", anchor="w")
+        self.tree.column("Kabinet", width=120, anchor="center")
+
+        self.tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        self.tree.configure(yscrollcommand=scrollbar.set)
+
+        #SMAZAT 
+        ttk.Button(self, text="Smazat vybraného učitele", command=self.delete_ucitel)\
+            .pack(pady=5)
 
         self.refresh()
 
@@ -48,7 +76,10 @@ class UciteleFrame(ttk.Frame):
 
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO ucitele (jmeno, kabinet) VALUES (?, ?)", (jmeno, kabinet))
+        cursor.execute(
+            "INSERT INTO ucitele (jmeno, kabinet) VALUES (?, ?)",
+            (jmeno, kabinet)
+        )
         conn.commit()
         conn.close()
 
@@ -59,14 +90,15 @@ class UciteleFrame(ttk.Frame):
     def delete_ucitel(self):
         selected = self.tree.selection()
         if not selected:
+            messagebox.showwarning("Upozornění", "Vyber učitele ke smazání")
             return
 
         item = self.tree.item(selected[0])
-        id = item["values"][0]
+        ucitel_id = item["values"][0]
 
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM ucitele WHERE id=?", (id,))
+        cursor.execute("DELETE FROM ucitele WHERE id=?", (ucitel_id,))
         conn.commit()
         conn.close()
 
