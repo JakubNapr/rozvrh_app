@@ -5,12 +5,18 @@ from predmety import PredmetyFrame
 from ucitele import UciteleFrame
 from rozvrh import RozvrhFrame
 
-# vytvoření databáze
+
 create_tables()
 
 root = tk.Tk()
-root.title("Správa rozvrhu")
+root.title("Správa rozvrhu žáků")
 root.geometry("900x600")
+root.minsize(800, 500)
+
+
+style = ttk.Style()
+style.theme_use("default")
+
 
 notebook = ttk.Notebook(root)
 notebook.pack(fill="both", expand=True)
